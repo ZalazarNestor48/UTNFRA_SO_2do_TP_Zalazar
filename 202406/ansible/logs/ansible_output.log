@@ -1,0 +1,56 @@
+2024-06-24 18:08:06,499 p=3444395 u=upszot n=ansible | [WARNING]: A duplicate localhost-like entry was found (localhost). First found localhost was 127.0.0.1
+
+2024-06-24 18:08:06,598 p=3444395 u=upszot n=ansible | PLAY [all] **********************************************************************************************************************************************************************************************************************************
+2024-06-24 18:08:06,609 p=3444395 u=upszot n=ansible | TASK [Gathering Facts] **********************************************************************************************************************************************************************************************************************
+2024-06-24 18:08:07,746 p=3444395 u=upszot n=ansible | ok: [localhost]
+2024-06-24 18:08:07,775 p=3444395 u=upszot n=ansible | TASK [include_role : 2do_parcial] ***********************************************************************************************************************************************************************************************************
+2024-06-24 18:08:07,805 p=3444395 u=upszot n=ansible | TASK [2do_parcial : debug] ******************************************************************************************************************************************************************************************************************
+2024-06-24 18:08:07,817 p=3444395 u=upszot n=ansible | ok: [localhost] => {
+    "msg": "Tareas del 2do Parcial"
+}
+2024-06-24 18:08:07,836 p=3444395 u=upszot n=ansible | TASK [Otra tarea] ***************************************************************************************************************************************************************************************************************************
+2024-06-24 18:08:07,851 p=3444395 u=upszot n=ansible | ok: [localhost] => {
+    "msg": "Despues de la ejecucion del rol"
+}
+2024-06-24 18:08:07,885 p=3444395 u=upszot n=ansible | PLAY RECAP **********************************************************************************************************************************************************************************************************************************
+2024-06-24 18:08:07,885 p=3444395 u=upszot n=ansible | localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+2025-11-17 07:03:16,362 p=1922 u=vagrant n=ansible | 192.168.56.3 | UNREACHABLE! => {
+    "changed": false,
+    "msg": "Failed to connect to the host via ssh: Warning: Permanently added '192.168.56.3' (ED25519) to the list of known hosts.\r\nvagrant@192.168.56.3: Permission denied (publickey,password).",
+    "unreachable": true
+}
+2025-11-17 07:04:32,471 p=1932 u=vagrant n=ansible | [WARNING]: Platform linux on host 192.168.56.3 is using the discovered Python interpreter at /usr/bin/python3.10, but future installation of another Python interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-core/2.17/reference_appendices/interpreter_discovery.html for more information.
+
+2025-11-17 07:04:32,472 p=1932 u=vagrant n=ansible | 192.168.56.3 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3.10"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+2025-11-17 07:07:34,205 p=1895 u=vagrant n=ansible | PLAY [all] *********************************************************************
+2025-11-17 07:07:34,215 p=1895 u=vagrant n=ansible | TASK [Gathering Facts] *********************************************************
+2025-11-17 07:07:35,237 p=1895 u=vagrant n=ansible | [WARNING]: Platform linux on host 192.168.56.3 is using the discovered Python
+interpreter at /usr/bin/python3.10, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.17/reference_appendices/interpreter_discovery.html for more information.
+
+2025-11-17 07:07:35,237 p=1895 u=vagrant n=ansible | ok: [192.168.56.3]
+2025-11-17 07:07:35,241 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Crear carpeta principal /tmp/2do_parcial] ******************
+2025-11-17 07:07:35,493 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:35,498 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Crear carpeta alumno] **************************************
+2025-11-17 07:07:35,644 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:35,649 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Crear carpeta equipo] **************************************
+2025-11-17 07:07:35,777 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:35,785 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Copiar template datos_alumno] ******************************
+2025-11-17 07:07:36,221 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:36,225 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Copiar template datos_equipo] ******************************
+2025-11-17 07:07:36,459 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:36,464 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Crear grupo 2PSupervisores] ********************************
+2025-11-17 07:07:36,685 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:36,690 p=1895 u=vagrant n=ansible | TASK [2do_parcial : Configurar sudoers NOPASSWD para 2PSupervisores] ***********
+2025-11-17 07:07:36,924 p=1895 u=vagrant n=ansible | changed: [192.168.56.3]
+2025-11-17 07:07:36,929 p=1895 u=vagrant n=ansible | PLAY RECAP *********************************************************************
+2025-11-17 07:07:36,929 p=1895 u=vagrant n=ansible | 192.168.56.3               : ok=8    changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   

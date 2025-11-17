@@ -1,0 +1,42 @@
+---
+
+- name: Crear carpeta principal /tmp/2do_parcial
+  file:
+    path: /tmp/2do_parcial
+    state: directory
+    mode: '0755'
+
+- name: Crear carpeta alumno
+  file:
+    path: /tmp/2do_parcial/alumno
+    state: directory
+    mode: '0755'
+
+- name: Crear carpeta equipo
+  file:
+    path: /tmp/2do_parcial/equipo
+    state: directory
+    mode: '0755'
+
+- name: Copiar template datos_alumno
+  template:
+    src: datos_alumno.j2
+    dest: /tmp/2do_parcial/alumno/datos_alumno.txt
+
+- name: Copiar template datos_equipo
+  template:
+    src: datos_equipo.j2
+    dest: /tmp/2do_parcial/equipo/datos_equipo.txt
+
+- name: Crear grupo 2PSupervisores
+  group:
+    name: 2PSupervisores
+    state: present
+
+- name: Configurar sudoers NOPASSWD para 2PSupervisores
+  copy:
+    dest: /etc/sudoers.d/2PSupervisores
+    content: "%2PSupervisores ALL=(ALL) NOPASSWD:ALL\n"
+    mode: '0440'
+  become: yes
+
