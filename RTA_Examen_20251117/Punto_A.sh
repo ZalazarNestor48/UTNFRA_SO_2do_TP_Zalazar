@@ -1,72 +1,114 @@
 #!/bin/bash
-# Script para configurar LVM según el Punto A del TP.
+# Punto_A.sh
+# Persistencia y montaje de volúmenes LVM para TP
+# Ajustado a la VM provista (vg_datos, vg_temp)
+#
+# Uso: sudo bash Punto_A.sh
+# (Se asume que los LV ya existen: /dev/vg_datos/lv_docker, /dev/vg_datos/lv_workareas, /dev/vg_temp/lv_swap)
 
-# Variables de ruta de los Logical Volumes (LVs)
-LV_DOCKER="/dev/mapper/vg_datos-lv_docker"
-LV_WORKAREAS="/dev/mapper/vg_datos-lv_workareas"
-LV_SWAP="/dev/mapper/vg_temp-lv_swap"
+set -euo pipefail
 
-echo "--- 1. Limpieza de firmas de archivos y creación de Physical Volumes (PV) ---"
-# Limpiar firmas antiguas (esencial para evitar que el sistema las detecte mal)
-# Nota: Usamos las particiones que creaste: sdd1, sdd2, sdc1, sdc2
-sudo wipefs -a /dev/sdd1
-sudo wipefs -a /dev/sdd2
-sudo wipefs -a /dev/sdc1
-sudo wipefs -a /dev/sdc2
+LV_DOCKER="/dev/vg_datos/lv_docker"
+LV_WORK="/dev/vg_datos/lv_workareas"
+LV_SWAP="/dev/vg_temp/lv_swap"
 
-# Creación de PVs (usando sdd y sdc según tu particionamiento)
-sudo pvcreate /dev/sdd1 /dev/sdc2  # Para vg_datos (~1.5G + ~511M)
-sudo pvcreate /dev/sdd2 /dev/sdc1  # Para vg_temp (~511M + ~512M)
-sudo pvs
+MOUNT_DOCKER="/var/lib/docker"
+MOUNT_WORK="/work"
 
-echo "--- 2. Creación de Volume Groups (VG) y Logical Volumes (LV) ---"
-# Creación de VGs
-sudo vgcreate vg_datos /dev/sdd1 /dev/sdc2
-sudo vgcreate vg_temp /dev/sdd2 /dev/sdc1
+FSTAB="/etc/fstab"
 
-# Creación de LVs con el tamaño solicitado:
-# LV para Docker (5MB en vg_datos)
-sudo lvcreate -L 5M vg_datos -n lv_docker
-# LV para Workareas (1.5GB en vg_datos)
-sudo lvcreate -L 1.5G vg_datos -n lv_workareas
-# LV para Swap (512MB en vg_temp)
-sudo lvcreate -L 512M vg_temp -n lv_swap
-sudo lvs
+# --- 0) comprobaciones iniciales ---
+echo "Comprobando existencia de LVs..."
+if [ ! -b "$LV_DOCKER" ]; then
+  echo "ERROR: $LV_DOCKER no existe. Abortando." >&2
+  exit 1
+fi
+if [ ! -b "$LV_WORK" ]; then
+  echo "ERROR: $LV_WORK no existe. Abortando." >&2
+  exit 1
+fi
+if [ ! -b "$LV_SWAP" ]; then
+  echo "ERROR: $LV_SWAP no existe. Abortando." >&2
+  exit 1
+fi
 
-echo "--- 3. Formateo de LVs ---"
-# Formateo de LVs para datos (ext4)
-sudo mkfs.ext4 $LV_DOCKER
-sudo mkfs.ext4 $LV_WORKAREAS
+# --- 1) Crear puntos de montaje si no existen ---
+echo "Creando puntos de montaje si es necesario..."
+sudo mkdir -p "$MOUNT_DOCKER"
+sudo mkdir -p "$MOUNT_WORK"
 
-# Configuración de Swap
-sudo mkswap $LV_SWAP
+# --- 2) Formatear si hace falta ---
+fs_type=$(sudo blkid -s TYPE -o value "$LV_WORK" || true)
+if [ -z "$fs_type" ]; then
+  echo "Formateando $LV_WORK a ext4..."
+  sudo mkfs.ext4 -F "$LV_WORK"
+else
+  echo "$LV_WORK ya tiene FS: $fs_type"
+fi
 
-echo "--- 4. Creación de Puntos de Montaje y Montaje Inicial ---"
-# Creación de directorios (puntos de montaje)
-sudo mkdir -p /var/lib/docker/
-sudo mkdir -p /work/
+fs_type=$(sudo blkid -s TYPE -o value "$LV_DOCKER" || true)
+if [ -z "$fs_type" ]; then
+  echo "Formateando $LV_DOCKER a ext4..."
+  sudo mkfs.ext4 -F "$LV_DOCKER"
+else
+  echo "$LV_DOCKER ya tiene FS: $fs_type"
+fi
 
-# Montaje de los volúmenes
-sudo mount $LV_DOCKER /var/lib/docker/
-sudo mount $LV_WORKAREAS /work/
+# --- 3) Montar ---
+echo "Montando volúmenes..."
+if ! mountpoint -q "$MOUNT_WORK"; then
+  sudo mount "$LV_WORK" "$MOUNT_WORK"
+  echo "Montado $LV_WORK -> $MOUNT_WORK"
+else
+  echo "$MOUNT_WORK ya está montado"
+fi
 
-# Habilitar Swap
-sudo swapon $LV_SWAP
+if ! mountpoint -q "$MOUNT_DOCKER"; then
+  sudo mount "$LV_DOCKER" "$MOUNT_DOCKER"
+  echo "Montado $LV_DOCKER -> $MOUNT_DOCKER"
+else
+  echo "$MOUNT_DOCKER ya está montado"
+fi
 
-echo "--- 5. Configuración de Persistencia en /etc/fstab y reinicio de Docker ---"
-# Agregar entradas a /etc/fstab para que persistan los montajes y el swap
-echo "# LVM Entries for TP 2025" | sudo tee -a /etc/fstab
+# --- 4) Swap ---
+echo "Chequeando swap..."
+if ! sudo swapon --show=NAME | grep -q "$(basename $LV_SWAP)" ; then
+  echo "Habilitando swap..."
+  sudo mkswap "$LV_SWAP" >/dev/null 2>&1 || true
+  sudo swapon "$LV_SWAP"
+else
+  echo "Swap ya activo"
+fi
 
-# LV Docker (Montaje persistente)
-echo "$LV_DOCKER /var/lib/docker ext4 defaults 0 0" | sudo tee -a /etc/fstab
-# LV Workareas (Montaje persistente)
-echo "$LV_WORKAREAS /work ext4 defaults 0 0" | sudo tee -a /etc/fstab
-# LV Swap (Habilitación persistente)
-echo "$LV_SWAP none swap sw 0 0" | sudo tee -a /etc/fstab
+# --- 5) Persistencia (fstab) ---
+echo "Actualizando /etc/fstab..."
 
-# Recargar daemon y reiniciar Docker para que use el nuevo volumen
+add_if_missing() {
+  local dev=$1
+  local mp=$2
+  local fs=$3
+  local opts=$4
+
+  if ! grep -q "^$dev $mp" "$FSTAB"; then
+    sudo sed -i "\| $mp |d" "$FSTAB"
+    echo "$dev $mp $fs $opts 0 0" | sudo tee -a "$FSTAB" >/dev/null
+    echo "Añadido: $dev → $mp"
+  else
+    echo "Entrada ya existe: $mp"
+  fi
+}
+
+add_if_missing "$LV_DOCKER" "$MOUNT_DOCKER" ext4 defaults
+add_if_missing "$LV_WORK" "$MOUNT_WORK" ext4 defaults
+
+if ! grep -q "^$LV_SWAP none swap" "$FSTAB"; then
+  sudo sed -i "\| swap |d" "$FSTAB"
+  echo "$LV_SWAP none swap sw 0 0" | sudo tee -a "$FSTAB" >/dev/null
+fi
+
+# --- 6) Reiniciar Docker ---
+echo "Reiniciando docker..."
 sudo systemctl daemon-reload
 sudo systemctl restart docker
-sudo systemctl status docker | grep Active
 
-echo "LVM configurado, persistencia establecida y Docker reiniciado.
+echo "Punto A finalizado correctamente."
